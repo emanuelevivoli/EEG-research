@@ -3,3 +3,14 @@
 
 # Python Cache
 .pyc
+
+# old and new logs / model / weights
+model/
+logs/
+*.old/
+weights/
+
+# data and stacked vectorial data
+data/
+stack/
+
