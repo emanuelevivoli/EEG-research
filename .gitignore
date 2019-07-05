@@ -2,7 +2,9 @@
 .ipynb_checkpoints
 
 # Python Cache
-.pyc
+*.pyc
+
+*.DS_Store
 
 # old and new logs / model / weights
 model/
@@ -14,3 +16,12 @@ weights/
 data/
 stack/
 
+*.edf
+*.edf.event
+
+*.pdf
+
+demo.py
+demo.ipynb
+
+.vscode

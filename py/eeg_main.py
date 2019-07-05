@@ -1,3 +1,4 @@
+#%%
 # Modeling & Preprocessing
 from keras.layers import Conv2D, BatchNormalization, Activation, Flatten, Dense, Dropout, LSTM, Input, TimeDistributed
 from keras import initializers, Model, optimizers, callbacks
@@ -20,6 +21,7 @@ for directory in DIR:
     if not os.path.exists(directory):
         os.makedirs(directory)
 
+# print('FNAMES', FNAMES)
 
 #%%
 X,y = get_data(FNAMES, epoch_sec=0.0625)
