@@ -2,7 +2,7 @@
 from glob import glob
 
 # EEG package
-from mne import  pick_types
+from mne import  pick_types, events_from_annotations
 from mne.io import read_raw_edf
 
 import os
@@ -10,13 +10,15 @@ import numpy as np
 
 #%%
 # Get file paths
-PATH = '/Users/jimmy/data/PhysioNet/'#'/rigel/pimri/users/xh2170/data2/data/' #PATH = './data/'
+PATH = './data/'
 SUBS = glob(PATH + 'S[0-9]*')
 FNAMES = sorted([x[-4:] for x in SUBS])
 
 try:
     FNAMES.remove('S089')
+    print('[INFO] S089 removed')
 except:
+    print("[INFO] S089 doesn't exists")
     pass
 
 
@@ -35,6 +37,8 @@ def get_data(subj_num=FNAMES, epoch_sec=0.0625):
     run_type_0 = '02'.split(',')
     run_type_1 = '04,08,12'.split(',')
     run_type_2 = '06,10,14'.split(',')
+
+    # print(run_type_0, run_type_1, run_type_2)
 
     # To calculated completion rate
     count = 0
@@ -60,6 +64,8 @@ def get_data(subj_num=FNAMES, epoch_sec=0.0625):
         (refer to the data descriptitons for the list of the types)
         Then assign X and Y according to the event types'''
         # Number of sliding windows
+        # print(event, epoch_sec)
+        # event_0 = event[1][0]
         n_segments = int(event[1]/epoch_sec)*2-1
         
         # Instantiate new_x, new_y
@@ -100,30 +106,43 @@ def get_data(subj_num=FNAMES, epoch_sec=0.0625):
         fnames = glob(os.path.join(PATH, subj, subj+'R*.edf'))
         fnames = [name for name in fnames if name[-6:-4] in run_type_0+run_type_1+run_type_2]
         
+        # print(fnames)
+
         for i, fname in enumerate(fnames):
             
             # Import data into MNE raw object
             raw = read_raw_edf(fname, preload=True, verbose=False)
+            # print(raw)
 
             picks = pick_types(raw.info, eeg=True)
+
+            # print('picks: ', picks)
             
             if raw.info['sfreq'] != 160:
                 print('{} is sampled at 128Hz so will be excluded.'.format(subj))
                 break
-            
+            # else:
+            #    print('{} is sampled at 160Hz so it is OK.'.format(subj))
+
             # High-pass filtering
             raw.filter(l_freq=1, h_freq=None, picks=picks)
             
             # Get annotation
             try:
-                events = raw.find_edf_events()
+                print('before')
+                events = events_from_annotations(raw)
+                print('after')
             except:
+                print('[INFO] events problem')
                 continue
+            
             # Get data
             data = raw.get_data(picks=picks)
             
             # Number of this run
             which_run = fname[-6:-4]
+
+            # print('which_run: ', which_run)
             
             """ Assignment Starts """ 
             # run 1 - baseline (eye closed)
@@ -139,13 +158,13 @@ def get_data(subj_num=FNAMES, epoch_sec=0.0625):
             # run 4,8,12 - imagine opening and closing left or right fist    
             elif which_run in run_type_1:
                 
-                for i, event in enumerate(events):
+                for i, event in enumerate(events[0]):
                     X, y = append_X_Y(run_type=1, event=event, old_x=X, old_y=y)
                         
             # run 6,10,14 - imagine opening and closing both fists or both feet
             elif which_run in run_type_2:
                    
-                for i, event in enumerate(events):         
+                for i, event in enumerate(events[0]):         
                     X, y = append_X_Y(run_type=2, event=event, old_x=X, old_y=y)
                         
     X = np.stack(X)

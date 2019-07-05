@@ -2,4 +2,17 @@
 .ipynb_checkpoints
 
 # Python Cache
-.pyc
+*.pyc
+
+*.DS_Store
+
+model
+*.edf
+*.edf.event
+
+*.pdf
+
+demo.py
+demo.ipynb
+
+.vscode
