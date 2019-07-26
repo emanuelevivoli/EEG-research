@@ -3,3 +3,9 @@
 
 # Python Cache
 .pyc
+
+data
+dataset
+my_log_dir
+
+__pycache__

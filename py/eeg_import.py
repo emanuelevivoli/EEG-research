@@ -10,7 +10,7 @@ import numpy as np
 
 #%%
 # Get file paths
-PATH = '/Users/jimmy/data/PhysioNet/'#'/rigel/pimri/users/xh2170/data2/data/' #PATH = './data/'
+PATH = '../data/' #'/Users/jimmy/data/PhysioNet/'#'/rigel/pimri/users/xh2170/data2/data/' #PATH = './data/'
 SUBS = glob(PATH + 'S[0-9]*')
 FNAMES = sorted([x[-4:] for x in SUBS])
 
@@ -60,8 +60,9 @@ def get_data(subj_num=FNAMES, epoch_sec=0.0625):
         (refer to the data descriptitons for the list of the types)
         Then assign X and Y according to the event types'''
         # Number of sliding windows
-        n_segments = int(event[1]/epoch_sec)*2-1
-        
+        # print(event[1])
+        n_segments = int(event[0]/epoch_sec)*2-1
+        # print('n_segments', n_segments)
         # Instantiate new_x, new_y
         new_y = old_y
         new_x = old_x
@@ -117,6 +118,7 @@ def get_data(subj_num=FNAMES, epoch_sec=0.0625):
             # Get annotation
             try:
                 events = raw.find_edf_events()
+                # print('events', events)
             except:
                 continue
             # Get data
@@ -131,6 +133,7 @@ def get_data(subj_num=FNAMES, epoch_sec=0.0625):
 
                 # Number of sliding windows
                 n_segments = int((raw.n_times/(epoch_sec*sfreq))*2-1)
+                print('n_times', n_times, 'n_segments', n_segments)
                 
                 # Append 0`s based on number of windows
                 y.extend([0]*n_segments)
@@ -139,13 +142,15 @@ def get_data(subj_num=FNAMES, epoch_sec=0.0625):
             # run 4,8,12 - imagine opening and closing left or right fist    
             elif which_run in run_type_1:
                 
-                for i, event in enumerate(events):
+                for i, event in enumerate(events[0]):
+                    # print('event', event)
                     X, y = append_X_Y(run_type=1, event=event, old_x=X, old_y=y)
                         
             # run 6,10,14 - imagine opening and closing both fists or both feet
             elif which_run in run_type_2:
                    
-                for i, event in enumerate(events):         
+                for i, event in enumerate(events[0]):      
+                    # print('event', event)   
                     X, y = append_X_Y(run_type=2, event=event, old_x=X, old_y=y)
                         
     X = np.stack(X)

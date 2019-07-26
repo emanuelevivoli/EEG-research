@@ -7,8 +7,9 @@ from keras.models import load_model
 from glob import glob
 
 # Modules
-from eeg_import import get_data, FNAMES
+from eeg_my_import import my_get_data, FNAMES
 from eeg_preprocessing import prepare_data
+from sklearn.preprocessing import OneHotEncoder, scale
 
 # Save the model
 import pickle
@@ -20,24 +21,38 @@ for directory in DIR:
     if not os.path.exists(directory):
         os.makedirs(directory)
 
+data_type = 'Imaged'
 
 #%%
-X,y = get_data(FNAMES, epoch_sec=0.0625)
+# X,y = get_data(FNAMES, epoch_sec=0.0625)
+# X, y, p, dim = my_get_data('Real', FNAMES, epoch_sec=0.0625)
+# X = pickle.load( open( "../dataset/processed_data/"+data_type+"/X.p", "rb" ) )
+# y = pickle.load( open( "../dataset/processed_data/"+data_type+"/y.p", "rb" ) )
+# p = pickle.load( open( "../dataset/processed_data/"+data_type+"/p.p", "rb" ) )
+# dim = pickle.load( open( "../dataset/processed_data/"+data_type+"/dim.p", "rb" ) )
 
-print(X.shape)
-print(y.shape)
+# print(X.shape)
+# print(y.shape)
 
 #%%
 
-X_train, y_train, X_test, y_test = prepare_data(X, y)
+# X_train, y_train, X_test, y_test = prepare_data(X, y)
+split_type = 'user_dependent'
+test_rate = 0.2
+seed = 42
 
-del X
-del y
+[X_train, y_train, p_train] = pickle.load( open( "../dataset/splitted_data/"+data_type+"/"+split_type+"/test_rate_"+str(test_rate)+"/seed_"+str(seed)+"/train.p", "rb" ) )
+[X_val, y_val, p_val]       = pickle.load( open( "../dataset/splitted_data/"+data_type+"/"+split_type+"/test_rate_"+str(test_rate)+"/seed_"+str(seed)+"/val.p"  , "rb" ) )
+[X_test, y_test, p_test]    = pickle.load( open( "../dataset/splitted_data/"+data_type+"/"+split_type+"/test_rate_"+str(test_rate)+"/seed_"+str(seed)+"/test.p" , "rb" ) )
+   
+
+# del X
+# del y
 #%%
 
 # Make another dimension, 1, to apply CNN for each time frame.
 X_train = X_train.reshape(X_train.shape[0], X_train.shape[1], X_train.shape[2], X_train.shape[3], 1)
-X_test = X_test.reshape(X_test.shape[0], X_train.shape[1], X_train.shape[2], X_train.shape[3], 1)
+X_val = X_val.reshape(X_val.shape[0], X_train.shape[1], X_train.shape[2], X_train.shape[3], 1)
 
 ## Complicated Model - the same as Zhang`s
 input_shape = (10, 10, 11, 1)
@@ -105,9 +120,16 @@ callbacks_list = [callbacks.ModelCheckpoint('./model/model' + str(len(MODEL_LIST
                                        write_images=True)]
 
 # Start training
+print('train size', X_train.shape, y_train.shape)
+print('val   size', X_val.shape, y_val.shape)
+
+oh = OneHotEncoder(categories='auto')
+y_train = oh.fit_transform(y_train).toarray()
+y_val = oh.fit_transform(y_val).toarray()
+
 model.compile(loss='categorical_crossentropy', optimizer=optimizers.adam(lr=0.001), metrics=['acc'])
 hist = model.fit(X_train, y_train, batch_size=64, epochs=3, 
-                callbacks=callbacks_list, validation_data=(X_test, y_test))
+                callbacks=callbacks_list, validation_data=(X_val, y_val))
 
 # Save the history
 hist_list = []#glob('./history/*')
